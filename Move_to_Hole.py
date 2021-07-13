@@ -12,7 +12,7 @@ def Move(robot, position, char, ENDEFFECTOR_TO_CAM):
     # path = os.path.dirname(os.path.abspath(__file__)) # get path to save the pictures
 
     # MoveL
-    FROM_HOLE_10CM = transl(0,0,-80)
+    FROM_HOLE_10CM = transl(0,0,-130)
 
     # Configure depth and color streams
     pipeline = rs.pipeline()
