@@ -9,7 +9,8 @@ from hole_detect import HoleDetec
 from ArUco_detect import ArUco
 from move_to_hole import Move
 from drill import Drill_on
-import rtde_control
+from force import force
+
 
 ## USER DEFINED
 # camera position with respect to end-effector 
@@ -121,8 +122,17 @@ def Holes(pose, char):
     target = transl(33,77,30) # Move to x,y position of the Camera, move forward in the z
     input("press enter to proceed")
     robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*target) # Move Drill to infront of the Hole
-    input("press enter to proceed")
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,53)) # Move Drill inside the Hole
+
+    # input("press enter to proceed")
+    # robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,53)) # Move Drill inside the Hole
+    
+    while True:
+        f = force()
+        robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,1)) 
+        if f < 60:
+            continue
+        break
+    
     input("press enter to proceed")
     robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-35)) # Move the Drill out until the Debarring tip is around the walls of the Hole
     input("press enter to proceed")
@@ -131,7 +141,6 @@ def Holes(pose, char):
     robot.setSpeed(speed_linear =20, speed_joints=3, accel_linear=-1, accel_joints=-1) # Re-Set Speed
     input("press enter to proceed")
     robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-18)) # Take Drill out of the Hole
-    input("press enter to proceed")
     robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(-33,-77,-30)) # Put Camera infront of the Hole again
     robot.setTool(Camera) # Re-set acvtive tool to Camera
 
@@ -139,31 +148,3 @@ def Holes(pose, char):
 Holes(pose1, "hole 1")
 # Holes(pose2, "hole 2")
 
-# def force():
-#     #---Parameters
-#     task_frame = robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL                                #Tool frame
-#     selection_vector = [0, 0, 1, 0, 0, 0]                                                          #Component with force constrain 
-#     wrench_down = [0, 0, 2, 0, 0, 0]                                                             #Force constrain
-#     # wrench_up = [0, 0, 10, 0, 0, 0]                                                              #Force constrain
-#     force_type = 2                                                                                 #1=point force, 2=no transformtion, 3=motion force
-#     # limits = [2, 2, 1.5, 1, 1, 1]                                   #Speed limit?
-#     # dt = 1.0/500  # 2ms
-#     # joint_q = [-1.54, -1.83, -2.28, -0.59, 1.60, 0.023]             #RoboDK
-#     # #---Move to initial joint position with a regular moveJ
-#     # rtde_c.moveJ(joint_q)                                           #RoboDK
-
-#     #---Execute 500Hz control loop for 4 seconds, each cycle is 2ms
-#     #for i in range(2000):
-#         ##start = time.time()
-#         # First move the robot down for 2 seconds, then up for 2 seconds
-#         #if i > 1000:
-#            # rtde_c.forceMode(task_frame, selection_vector, wrench_up, force_type, limits)
-#         #else:
-#     rtde_c.forceMode(task_frame, selection_vector, wrench_down, force_type, limits)
-#         #end = time.time()
-#         #duration = end - start
-#         #if duration < dt:
-#             #time.sleep(dt - duration)
-
-#     rtde_c.forceModeStop()
-#     rtde_c.stopScript()
