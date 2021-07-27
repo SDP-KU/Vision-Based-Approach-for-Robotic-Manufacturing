@@ -5,13 +5,13 @@ import sys, time, math, cv2, keyboard
 import pyrealsense2 as rs
 from scipy.spatial.transform import Rotation as R
 import cv2.aruco as aruco
-from Detect_Holes_Function import HoleDetec
+from hole_detect import HoleDetec
 
 def Move(robot, position, char, ENDEFFECTOR_TO_CAM):
-    # path = os.path.dirname(os.path.abspath(__file__)) # get path to save the pictures
+    path = os.path.dirname(os.path.abspath(__file__)) # get path to save the pictures
 
     # MoveL
-    FROM_HOLE_10CM = transl(0,0,-130)
+    FROM_HOLE_10CM = transl(0,0,-120)
 
     # Configure depth and color streams
     pipeline = rs.pipeline()
@@ -51,12 +51,11 @@ def Move(robot, position, char, ENDEFFECTOR_TO_CAM):
         x1,y1 = HoleDetec()
         delta_x = (x1-px)*0.26*0.5
         delta_y = (y1-py)*0.26*0.5
-        # input('press enter to correct position')
         x = transl(delta_x, delta_y, 0)
         current_position = robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_CAM
         robot.MoveL(current_position*x)
         x2,y2 = HoleDetec()
-        if abs(x2-px) <= 5 and abs(y2-py) <= 5:
+        if abs(x2-px) <= 1 and abs(y2-py) <= 1:
             break
 
     # name = "finish " + char
