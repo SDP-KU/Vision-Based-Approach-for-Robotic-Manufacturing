@@ -10,8 +10,7 @@ from hole_detect import HoleDetec
 def Move(robot, position, char, ENDEFFECTOR_TO_CAM):
     path = os.path.dirname(os.path.abspath(__file__)) # get path to save the pictures
 
-    # MoveL
-    FROM_HOLE_10CM = transl(0,0,-120)
+    FROM_HOLE_10CM = transl(0,0,-125) # Distance to get closer to the plate
 
     # Configure depth and color streams
     pipeline = rs.pipeline()
