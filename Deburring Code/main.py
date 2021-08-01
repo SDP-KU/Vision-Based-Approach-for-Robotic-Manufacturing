@@ -9,7 +9,7 @@ from hole_detect import HoleDetec
 from ArUco_detect import ArUco
 from move_to_hole import Move
 from drill import Drill_on
-from force import force
+from force import force_sense
 
 
 ## USER DEFINED
@@ -35,16 +35,16 @@ RDK = Robolink()
 # gather robot, tool and reference frames from the station
 robot = RDK.Item('UR10 A', ITEM_TYPE_ROBOT)
 
-def connect():
+def connect_DK():
     # Connect To Robot
     RUN_ON_ROBOT = True
-    if RDK.RunMode() != RUNMODE_SIMULATE:
-        RUN_ON_ROBOT = False
+    # if RDK.RunMode() != RUNMODE_SIMULATE:
+    #     RUN_ON_ROBOT = False
     if RUN_ON_ROBOT:
         # robot.setConnectionParams('192.168.50.110',30000,'/', 'anonymous','') # NEW LINE
         # Connect to the robot using default IP
-        success = robot.Connect() # Try to connect once
-        # success = robot.ConnectSafe() # Try to connect multiple times ## NEW LINE
+        # success = robot.Connect() # Try to connect once
+        success = robot.ConnectSafe() # Try to connect multiple times ## NEW LINE
         status, status_msg = robot.ConnectedState()
         if status != ROBOTCOM_READY:
             # Stop if the connection did not succeed
@@ -55,7 +55,7 @@ def connect():
         RDK.setRunMode(RUNMODE_RUN_ROBOT)
         # Note: This is set automatically when we Connect() to the robot through the API
 
-connect() # Connect with the Robot
+connect_DK() # Connect with the Robot
 
 # get the current robot joints
 robot_joints = robot.Joints()
@@ -93,7 +93,7 @@ def speed():
 
 speed() # Set Speed
 
-RDK.setCollisionActive(COLLISION_ON if CHECK_COLLISIONS else COLLISION_OFF) # collision 
+# RDK.setCollisionActive(COLLISION_ON if CHECK_COLLISIONS else COLLISION_OFF) # collision 
 
 def CreateHole( name, pos, x,y,z ):
     Hole_Item = RDK.Item(name, ITEM_TYPE_TARGET)        # Add Item
@@ -107,7 +107,7 @@ def CreateHole( name, pos, x,y,z ):
 # Create and initialize Holes, return Hole pose
 pose1 = CreateHole("Hole 1", aruco_pose , -70, 35, 0)
 pose2 = CreateHole("Hole 2", pose1, -50, 0, 0)
-# pose3 = CreateHole("Hole 3", pose2, -50, 0, 0)
+pose3 = CreateHole("Hole 3", pose2, -50, 0, 0)
 # pose4 = CreateHole("Hole 4", pose3, -50, 0, 0)
 # pose5 = CreateHole("Hole 5", pose4, 0, 45, 0)
 # pose6 = CreateHole("Hole 6", pose5, 50, 0, 0)
@@ -125,25 +125,31 @@ Move(robot, aruco_pose, "aruco", ENDEFFECTOR_TO_CAM) # Move to ArUco
 def move_hole(pose, char):
     Move(robot, pose, char, ENDEFFECTOR_TO_CAM) # Move to Hole
     robot.setTool(Drill) # Set active tool to Drill
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(35.5,78,20)) # Move Drill to infront of the Hole, Move to x,y position of the Camera, move forward in the z
-    force() # insert and force sensing
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(48,76,25)) # Move Drill to infront of the Hole, Move to x,y position of the Camera, move forward in the z
+    input("enter")
+    force_sense() # insert and force sensing
     input("re-connect")
     time.sleep(1)
-    connect() # Re-Connect with the Robot
+    connect_DK() # Re-Connect with the Robot
+    speed() # Re-set Speed
     input("enter")
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-35)) # Move the Drill out until the Debarring tip is around the walls of the Hole (REAR)
-    Drill_on() # Strat Debarring
-    connect() # Re-Connect with the Robot -- ERROR DOES NOT WORK
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-30)) # Move the Drill out until the Debarring tip is around the walls of the Hole (REAR)
     input("enter")
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-10)) # Move the Drill out until the Debarring tip is around the walls of the Hole (REAR)
     Drill_on() # Strat Debarring
-    connect() # Re-Connect with the Robot -- ERROR DOES NOT WORK
-    # speed() # Re-set Speed -- ERROR DOES NOT WORK
+    time.sleep(1)
+    connect_DK() # Re-Connect with the Robot
+    speed() # Re-set Speed
+    input("enter")
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-11)) # Move the Drill out until the Debarring tip is around the walls of the Hole (REAR)
+    Drill_on() # Strat Debarring
+    time.sleep(1)
+    connect_DK() # Re-Connect with the Robot
+    speed() # Re-set Speed
     input("enter")
     robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-18)) # Take Drill out of the Hole
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(-35.5,-78,-20)) # Put Camera infront of the Hole again
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(-48,-76,-25)) # Put Camera infront of the Hole again
     robot.setTool(Camera) # Re-set acvtive tool to Camera
 
-
 move_hole(pose1, "hole 1")
-# Holes(pose2, "hole 2")
+move_hole(pose2, "hole 2")
+move_hole(pose3, "hole 3")
