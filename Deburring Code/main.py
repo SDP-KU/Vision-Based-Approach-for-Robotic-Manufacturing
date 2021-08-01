@@ -140,7 +140,7 @@ def move_hole(pose, char):
     connect_DK() # Re-Connect with the Robot
     speed() # Re-set Speed
     input("enter")
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-11)) # Move the Drill out until the Debarring tip is around the walls of the Hole (REAR)
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-11)) # Move the Drill out until the Debarring tip is around the walls of the Hole (FRONT)
     Drill_on() # Strat Debarring
     time.sleep(1)
     connect_DK() # Re-Connect with the Robot
