@@ -28,6 +28,7 @@ D2E_z = 144.74650
 D2E_rx = np.multiply(1.55860250, 180/math.pi) 
 D2E_ry = np.multiply(-0.00987130, 180/math.pi)
 D2E_rz = np.multiply(-0.67725880, 180/math.pi)
+D2E_rad = [D2E_x/1000, D2E_y/1000, D2E_z/1000, 1.55860250, -0.00987130, -0.67725880]
 
 # establish a link with the simulator
 RDK = Robolink()
@@ -40,8 +41,10 @@ def connect():
     if RDK.RunMode() != RUNMODE_SIMULATE:
         RUN_ON_ROBOT = False
     if RUN_ON_ROBOT:
+        # robot.setConnectionParams('192.168.50.110',30000,'/', 'anonymous','') # NEW LINE
         # Connect to the robot using default IP
         success = robot.Connect() # Try to connect once
+        # success = robot.ConnectSafe() # Try to connect multiple times ## NEW LINE
         status, status_msg = robot.ConnectedState()
         if status != ROBOTCOM_READY:
             # Stop if the connection did not succeed
@@ -85,9 +88,12 @@ aruco_target.setPose(aruco_pose)
 new_robot_joints = robot.SolveIK(aruco_pose)
 new_robot_config = robot.JointsConfig(new_robot_joints)
 
-robot.setSpeed(speed_linear =20, speed_joints=3, accel_linear=-1, accel_joints=-1) # set speed
+def speed():
+    robot.setSpeed(speed_linear =20, speed_joints=3, accel_linear=-1, accel_joints=-1) # set speed
 
-check_collision = COLLISION_ON # collision 
+speed() # Set Speed
+
+RDK.setCollisionActive(COLLISION_ON if CHECK_COLLISIONS else COLLISION_OFF) # collision 
 
 def CreateHole( name, pos, x,y,z ):
     Hole_Item = RDK.Item(name, ITEM_TYPE_TARGET)        # Add Item
@@ -116,35 +122,28 @@ pose2 = CreateHole("Hole 2", pose1, -50, 0, 0)
 # Move to ArUco
 Move(robot, aruco_pose, "aruco", ENDEFFECTOR_TO_CAM) # Move to ArUco
 
-def Holes(pose, char):
+def move_hole(pose, char):
     Move(robot, pose, char, ENDEFFECTOR_TO_CAM) # Move to Hole
     robot.setTool(Drill) # Set active tool to Drill
-    target = transl(33,77,30) # Move to x,y position of the Camera, move forward in the z
-    input("press enter to proceed")
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*target) # Move Drill to infront of the Hole
-
-    # input("press enter to proceed")
-    # robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,53)) # Move Drill inside the Hole
-    
-    while True:
-        f = force()
-        robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,1)) 
-        if f < 60:
-            continue
-        break
-    
-    input("press enter to proceed")
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-35)) # Move the Drill out until the Debarring tip is around the walls of the Hole
-    input("press enter to proceed")
-    Drill_on() # Strat Debarring
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(35.5,78,20)) # Move Drill to infront of the Hole, Move to x,y position of the Camera, move forward in the z
+    force() # insert and force sensing
+    input("re-connect")
+    time.sleep(1)
     connect() # Re-Connect with the Robot
-    robot.setSpeed(speed_linear =20, speed_joints=3, accel_linear=-1, accel_joints=-1) # Re-Set Speed
-    input("press enter to proceed")
+    input("enter")
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-35)) # Move the Drill out until the Debarring tip is around the walls of the Hole (REAR)
+    Drill_on() # Strat Debarring
+    connect() # Re-Connect with the Robot -- ERROR DOES NOT WORK
+    input("enter")
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-10)) # Move the Drill out until the Debarring tip is around the walls of the Hole (REAR)
+    Drill_on() # Strat Debarring
+    connect() # Re-Connect with the Robot -- ERROR DOES NOT WORK
+    # speed() # Re-set Speed -- ERROR DOES NOT WORK
+    input("enter")
     robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-18)) # Take Drill out of the Hole
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(-33,-77,-30)) # Put Camera infront of the Hole again
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(-35.5,-78,-20)) # Put Camera infront of the Hole again
     robot.setTool(Camera) # Re-set acvtive tool to Camera
 
 
-Holes(pose1, "hole 1")
+move_hole(pose1, "hole 1")
 # Holes(pose2, "hole 2")
-
