@@ -2,8 +2,7 @@ import numpy as np
 import time, sys, math, cv2, keyboard, os
 import pyrealsense2 as rs
 
-# path = os.path.dirname(os.path.abspath(__file__)) # get path to save the pictures
-path = os.path.dirname(os.path.abspath(__file__))
+# path = os.path.dirname(os.path.abspath(__file__))
 def HoleDetec():
 
     # Configure depth and color streams
@@ -83,7 +82,6 @@ def HoleDetec():
         overlay = im.copy()
         keypoints = detector.detect(im)
         if keypoints is not None:
-            i = 1 ################################
             for k in keypoints:
                 cv2.circle(frame, (int(k.pt[0]), int(k.pt[1])), int(k.size/3), (0, 0, 255), -1)
                 cv2.line(frame, (int(k.pt[0])-20, int(k.pt[1])), (int(k.pt[0])+20, int(k.pt[1])), (0,0,0), 2)
@@ -93,8 +91,8 @@ def HoleDetec():
             cv2.addWeighted(frame, opacity, im, 1 - opacity, 0, im)
             cv2.imshow("Output", cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             cv2.waitKey(1) # & 0xff
-            cv2.imwrite(str(path+"/"+str(i)+".jpg"), cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)) ##########
-            i += 1 ##############
+            # i = 1
+            # cv2.imwrite(str(path+"/"+str(i)+".jpg"), cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         
         px = 320
         py = 246
