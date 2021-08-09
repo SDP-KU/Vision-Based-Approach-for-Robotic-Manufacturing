@@ -10,13 +10,21 @@ from move_to_hole import Move
 from operation_hole import operation_correct, operation_force, operation_drill
 
 ## USER DEFINED
-# camera position with respect to end-effector 
-C2E_x = -0.0689*1000
-C2E_y = -0.1042*1000
-C2E_z = 0.21400*1000
-C2E_rx = np.multiply(-1.6229758, 180/math.pi) 
-C2E_ry = np.multiply(-0.0024435, 180/math.pi)
-C2E_rz = np.multiply(2.38062460, 180/math.pi)
+# camera position with respect to end-effector __OLD__
+# C2E_x = -0.0689*1000
+# C2E_y = -0.1042*1000
+# C2E_z = 0.21400*1000
+# C2E_rx = np.multiply(-1.6229758, 180/math.pi) 
+# C2E_ry = np.multiply(-0.0024435, 180/math.pi)
+# C2E_rz = np.multiply(2.38062460, 180/math.pi)
+# camera position with respect to end-effector   __NEW__
+C2E_x = -0.0750*1000
+C2E_y = -0.1168*1000
+C2E_z = 0.2231*1000
+C2E_rx = np.multiply(-1.5721943, 180/math.pi) 
+C2E_ry = np.multiply(0.0050954, 180/math.pi)
+C2E_rz = np.multiply(2.3598663, 180/math.pi)
+
 
 # Drill position with respect to end-effector
 D2E_x = -138.2393
@@ -93,47 +101,45 @@ def CreateHole( name, pos, x,y,z ):
     return (Hole_Pose)
 
 # Create and initialize Holes, return Hole pose
-pose1 = CreateHole("Hole 1", aruco_pose , -70, 30, 0)
-pose2 = CreateHole("Hole 2", pose1, -50, 0, 0)
-pose3 = CreateHole("Hole 3", pose2, -50, 0, 0)
-pose4 = CreateHole("Hole 4", pose3, -50, 0, 0)
-pose5 = CreateHole("Hole 5", pose4, 0, 40, 0)
-pose6 = CreateHole("Hole 6", pose5, 50, 0, 0)
-pose7 = CreateHole("Hole 7", pose6, 50, 0, 0)
-pose8 = CreateHole("Hole 8", pose7, 50, 0, 0)
-pose9 = CreateHole("Hole 9", pose8, 50, 0, 0)
-pose10 = CreateHole("Hole 10", pose9, 50, 0, 0)
-pose11 = CreateHole("Hole 11", pose10, 50, 0, 0)
-pose12 = CreateHole("Hole 12", pose11, 50, 0, 0)
-pose13 = CreateHole("Hole 13", pose12, 50, 0, 0)
+pose1 = CreateHole("Hole 1", aruco_pose , 80, 30, 0)
+pose2 = CreateHole("Hole 2", pose1, 50, 0, 0)
+pose3 = CreateHole("Hole 3", pose2, 50, 0, 0)
+pose4 = CreateHole("Hole 4", pose3, 50, 0, 0)
+pose5 = CreateHole("Hole 5", pose4, 50, 0, 0)
+pose6 = CreateHole("Hole 6", pose5, 0, 40, 0)
+pose7 = CreateHole("Hole 7", pose6, -50, 0, 0)
+pose8 = CreateHole("Hole 8", pose7, -50, 0, 0)
+pose9 = CreateHole("Hole 9", pose8, -50, 0, 0)
+pose10 = CreateHole("Hole 10", pose9, -50, 0, 0)
 
 robot.MoveL(aruco_pose * transl(0,0,-125)) # Move to ArUco 
 
 def operation(pose):
-    robot.MoveL(pose * transl(0,0,-125))
+    robot.MoveL(pose * transl(0,0,-120))
     # Move(robot, pose, "aruco", ENDEFFECTOR_TO_CAM) # Move to Hole
     operation_correct() # hole detection
     connect_DK() # Re-Connect with the Robot
     speed() # Re-set Speed
     robot.setTool(Drill) # Set active tool to Drill
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(31,78,25)) # Move Drill to infront of the Hole, Move to x,y position of the Camera, move forward in the z
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(33,81,5)) # Move Drill to infront of the Hole, Move to x,y position of the Camera, move forward in the z
+    input("enter")
     operation_force() # insert and force sensing
     connect_DK() # Re-Connect with the Robot
     speed() # Re-set Speed
     input("enter")
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-33)) # Move the Drill out until the Debarring tip is around the walls of the Hole (REAR)
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-35)) # Move the Drill out until the Debarring tip is around the walls of the Hole (REAR)
     input("enter")
     operation_drill() # Strat Debarring
     connect_DK() # Re-Connect with the Robot
     speed() # Re-set Speed
-    input("enter")
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-9)) # Move the Drill out until the Debarring tip is around the walls of the Hole (FRONT)
-    input("enter")
+    # input("enter")
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-5)) # Move the Drill out until the Debarring tip is around the walls of the Hole (FRONT)
+    # input("enter")
     operation_drill() # Strat Debarring
     connect_DK() # Re-Connect with the Robot
     speed() # Re-set Speed
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-24)) # Take Drill out of the Hole
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(-31,-78,-25)) # Put Camera infront of the Hole again
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-29)) # Take Drill out of the Hole
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(-33,-81,-5)) # Put Camera infront of the Hole again
     robot.setTool(Camera) # Re-set acvtive tool to Camera
 
 operation(pose1)
@@ -146,6 +152,6 @@ operation(pose7)
 operation(pose8)
 operation(pose9)
 operation(pose10)
-operation(pose11)
-operation(pose12)
-operation(pose13)
+# operation(pose11)
+# operation(pose12)
+# operation(pose13)
