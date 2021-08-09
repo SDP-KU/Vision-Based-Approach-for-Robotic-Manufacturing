@@ -40,8 +40,8 @@ def operation_detect():
         detector = cv2.SimpleBlobDetector_create()
         params = cv2.SimpleBlobDetector_Params()
         params.filterByArea = True
-        params.minArea = 150 # 200 try
-        params.maxArea = 3000 # 4000
+        params.minArea = 200 # 200 try
+        params.maxArea = 2500 # 4000
         params.filterByCircularity = True
         params.minCircularity = 0.1
         params.filterByInertia = True
@@ -105,7 +105,7 @@ def operation_correct():
 
 def operation_force():
     rob = urx.Robot("192.168.50.110", use_rt=True) # connect to UR10   
-    r = [0,-0.008, -0.002 ,0,0,0] 
+    r = [0,-0.007, -0.003 ,0,0,0] 
     while True:
         rob.speedl(r, 0.15, 0.1)    
         f = rob.get_force(wait=True)
