@@ -68,7 +68,7 @@ def ArUco():
             rvec = ret[0][0][0]
             tvec = ret[1][0][0]
 
-            # Convert Vector r and (180,0,0) to Rotation Matrix
+            # Convert Vector r and (180,0,0) to Rotation Matrix  #__PRODUCE SOME ERROR CHECK__#
             rvec_mat = R.from_rotvec(rvec)
             rot_mat = R.from_rotvec([3.14,0,0])
             rvec_mat = rvec_mat.as_matrix()
