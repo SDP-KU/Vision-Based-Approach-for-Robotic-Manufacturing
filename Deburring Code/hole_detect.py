@@ -294,8 +294,7 @@ def operation_detect():
         print("The demo requires Depth camera with Color sensor")
         exit(0)
     pipeline.start(config)
-    x_v = []
-    y_v = []
+    x_v, y_v = [], []
     center_x, center_y = 0, 0
     while True:
         frames = pipeline.wait_for_frames()
@@ -304,14 +303,14 @@ def operation_detect():
             continue
         frame  = np.asanyarray(color_frame.get_data())
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        lower_range = np.array([0, 190, 0]) 
-        upper_range = np.array([179, 255, 255])
+        lower_range = np.array([0, 190, 0])  # HSV MASK LOWER
+        upper_range = np.array([179, 255, 255]) # HSV MASK UPPER
         mask = cv2.inRange(hsv, lower_range, upper_range)
         mask_3 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
         detector = cv2.SimpleBlobDetector_create()
         params = cv2.SimpleBlobDetector_Params()
         params.filterByArea = True
-        params.minArea = 200 # 150
+        params.minArea = 150 # 200 try
         params.maxArea = 3000 # 4000
         params.filterByCircularity = True
         params.minCircularity = 0.1
@@ -332,9 +331,8 @@ def operation_detect():
             cv2.addWeighted(frame, opacity, im, 1 - opacity, 0, im)
             cv2.imshow("Output", cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)) 
             cv2.waitKey(1)  & 0xff
-        px, py = 320, 246
+        px, py, b = 320, 246, 100
         p = math.sqrt((px*px) + (py*py))
-        b = 100
         for x,y in zip(x_v,y_v):
             xy = math.sqrt((x*x) + (y*y))
             if abs(xy - p) <= b:
