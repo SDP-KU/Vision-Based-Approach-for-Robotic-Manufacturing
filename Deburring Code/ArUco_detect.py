@@ -67,6 +67,7 @@ def ArUco():
             #---unpack output
             rvec = ret[0][0][0]
             tvec = ret[1][0][0]
+
             # Convert Vector r and (180,0,0) to Rotation Matrix
             rvec_mat = R.from_rotvec(rvec)
             rot_mat = R.from_rotvec([3.14,0,0])
@@ -77,6 +78,8 @@ def ArUco():
             # Convert it back to vector
             r = R.from_matrix(rotation_matrix_final)
             rvec = r.as_euler('zyx', degrees=True)
+
+            
             tvec = np.multiply(tvec, 10) # cm 2 mm
             aruco_pos = np.concatenate((tvec,rvec), axis=0)
             # print (rvec)
