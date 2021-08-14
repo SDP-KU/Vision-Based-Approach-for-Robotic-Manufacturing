@@ -1,12 +1,9 @@
-# from ToolCalibration import Positions
 from robolink import *    # RoboDK API
 from robodk import *      # Robot toolbox
 import numpy as np
-import sys, time, math, cv2, keyboard
+import sys, time, math, cv2, keyboard, h5py, copy
 from scipy.spatial.transform import Rotation as R
 import pyrealsense2 as rs
-import h5py
-import copy
 
 # establish a link with the simulator
 RDK = Robolink()
@@ -40,12 +37,9 @@ def Take_Pose():
     while True:
         ask = input("proceed (y/n)")
         if ask == 'y':
-            n=0
-            # get the current robot joints
-            robot_joints = robot.Joints()
 
             # get the robot position from the joints
-            robot_position = robot.SolveFK(robot_joints)
+            robot_position = robot.SolveFK(robot.Joints())
 
             #-- Get Base to Flange matrix
             robot_pose_matrix = copy.deepcopy(np.array(robot_position)) #Matrix A
@@ -55,7 +49,6 @@ def Take_Pose():
             x = input("x: ")
             y = input("y: ")
            
-
             #Convert to cm
             x = int(x)*50
             y = int(y)*40
@@ -71,23 +64,8 @@ def Take_Pose():
             break
 Take_Pose()
 
-
 #-- Writing data in h5 file
 data.create_dataset('B2F', data=MatA)
 data.create_dataset('W2H', data=MatD)
 
 data.close()
-
-#print (MatA)
-#print (MatD)
-
-# Read H5 file
-f = h5py.File("Final_Calb.hdf5", "r")
-# Get and print list of datasets within the H5 file
-datasetNames = [n for n in f.keys()]
-for n in datasetNames:
-    print(n)
-
-f.close()
-
-
