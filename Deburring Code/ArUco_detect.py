@@ -1,9 +1,6 @@
 import numpy as np
-import cv2
-import sys, time, math
+import sys, time, math, keyboard, cv2
 import pyrealsense2 as rs
-import keyboard     # using module keyboard
-import math
 from scipy.spatial.transform import Rotation as R
 import cv2.aruco as aruco
 
