@@ -19,7 +19,7 @@ def ArUco():
     color_profile = rs.video_stream_profile(pipeline_profile.get_stream(rs.stream.color))
     color_intrinsics = color_profile.get_intrinsics()
     w, h = color_intrinsics.width, color_intrinsics.height
-    Cameramatrix=np.array([[611.301, 0, 320.367],[0, 611.506, 246.129],[0,0,1]])
+    Cameramatrix=np.array([[611.301, 0, 320.367],[0, 611.506, 246.129],[0,0,1]]) # check Camera Matrix
     #Find RGB 
     found_rgb = False   #Intial Value
     for s in device.sensors:
