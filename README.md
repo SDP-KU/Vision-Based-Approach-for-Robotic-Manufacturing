@@ -1,7 +1,7 @@
 # Vision-Based-Approach-for-Robotic-Manufacturing
 
 This is the *Senior Design Project by Khalifa University Students*: <br />
-*Nouf Almesafri - Mouza Alzaabi - Bushra Aldanhani - Anoud Alzahmi - Ameera Alshehhi* <br />
+*Nouf Almesafri - Mouza Alzaabi - Bushra Aldhanhani - Anoud Alzahmi - Ameera Alshehhi* <br />
 <br />
 The project is "Vision-Based Approach for Robotic Manufacturing" By **STRATA**. It includes the following processes: drilling, deburring, painting and riveting. <br />
 The SDP project includes the following processes: deburring, painting and if time and resources allow, the riveting process will be considered as well. As for the drilling process, it is already investigated by STRATA. <br />
