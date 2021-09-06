@@ -1,0 +1,15 @@
+numpy
+sys
+time
+math
+keyboard
+cv2
+pyrealsense2
+scipy.spatial.transform
+cv2.aruco
+math3d
+pygame
+urx
+os
+robolink
+robodk
