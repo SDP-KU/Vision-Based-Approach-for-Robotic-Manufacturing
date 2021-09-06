@@ -13,3 +13,7 @@ urx
 os
 robolink
 robodk
+h5py
+copy
+glob
+yaml
