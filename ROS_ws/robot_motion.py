@@ -98,8 +98,8 @@ def tf_M():
     return(M,tvec)
 
 def cam_M():
-  tvec_c=np.array([-0.0689,-0.1042,0.21400])
-  rvec_c=np.array([-1.6229758,-0.0024435,2.38062460])
+  tvec_c=np.array([-0.075,-0.1168,0.2231])
+  rvec_c=np.array([-1.5721943,-0.0050954,2.38062460])
   rotation = R.from_rotvec(rvec_c)
   M_cam = rotation.as_dcm()
   return(M_cam,tvec_c)
@@ -109,27 +109,46 @@ def trans(M,T):
   return(trans)
 
 def Pose_M(pose):
-  tvec=[pose.position.x,pose.position.y,pose.position.z]
+  tvec=[pose.position.y,pose.position.z,pose.position.x]
   quat =[pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w]
   rotation = R.from_quat(quat)
   Rp = rotation.as_dcm()
-  return(Rp,tvec)
+  M=[[Rp[0][0],Rp [0][1],Rp[0][2]],
+  [Rp[2][0],Rp [2][1],Rp[2][2]],
+  [Rp[1][0],Rp [1][1],Rp[1][2]]]
+  return(M,tvec)
+
+def cam_base(p):
+  # R1 & T1 are base to endeffctor
+  R1=[[ 0.99990384 , 0.01049366 ,-0.00906592],
+ [-0.0117748 ,  0.98779455, -0.15531674],
+ [ 0.00732542 , 0.15540856 , 0.98782312]]
+  T1= [0.021463172010453002, -0.5217860586364362, 0.4222618857956175]
+  R2,T2= cam_M()
+  pR,pT= pose_Form(p)
+  trans1=trans(R1,T1)
+  trans2=trans(R2,T2)
+  trans3=trans(pR,pT)
+  cam_base=np.matmul(np.matmul(trans1,trans2),trans3)
+
+  return(cam_base)
 
 def aruco_base(p):
   # R1 & T1 are base to endeffctor
-  R1= [[ 0.70069694, -0.71245095 ,-0.03791369],
- [ 0.70889612 , 0.70123236, -0.0757593 ],
- [ 0.08056109 , 0.02620745 , 0.99640508]]
-  T1= [-0.019955023962595186, -0.4478369330061147, 0.42278014222017146]
+  R1=[[ 0.99990384 , 0.01049366 ,-0.00906592],
+ [-0.0117748 ,  0.98779455, -0.15531674],
+ [ 0.00732542 , 0.15540856 , 0.98782312]]
+  T1= [0.021463172010453002, -0.5217860586364362, 0.4222618857956175]
   R2,T2= cam_M()
   R3,T3=Pose_M(p)
- 
   trans1=trans(R1,T1)
   trans2=trans(R2,T2)
-  T3=[T3[0]/1000,T3[1]/1000,T3[2]/1000]
   print(T3)
+  T3=[-T3[0]/1000,T3[1]/1000,T3[2]/1000]
   trans3=trans(R3,T3)
+  print(trans3)
   aruco_base=np.matmul(np.matmul(trans1,trans2),trans3)
+
   return(aruco_base)
 
 def TransBack(M):
@@ -138,12 +157,14 @@ def TransBack(M):
 
   return(matrix,tvec)
 
-def start_pose():
+
+
+def start_pose(p):
   # R1 & T1 are base to endeffctor
-  R1= [[ 0.70069694, -0.71245095 ,-0.03791369],
- [ 0.70889612 , 0.70123236, -0.0757593 ],
- [ 0.08056109 , 0.02620745 , 0.99640508]]
-  T1= [-0.019955023962595186, -0.4478369330061147, 0.42278014222017146]
+  R1= [[ 0.99990384 , 0.01049366 ,-0.00906592],
+ [-0.0117748 ,  0.98779455, -0.15531674],
+ [ 0.00732542 , 0.15540856 , 0.98782312]]
+  T1= [0.021463172010453002, -0.5217860586364362, 0.4222618857956175]
   trans1=trans(R1,T1)
   r=R.from_dcm(R1) 
   quat=r.as_quat()
@@ -157,7 +178,6 @@ def start_pose():
   pose_goal.position.y = T1[1]
   pose_goal.position.z = T1[2]
   move_group.set_pose_target(pose_goal)
-  print(pose_goal)
   plan = move_group.go(wait=True)
   move_group.stop()
   move_group.clear_pose_targets()
@@ -178,21 +198,15 @@ def start_pose():
 
 
 
-
-
-
-
 def go_to_pose_goal(Pose,x,y,z):
-  print(Pose)
   R_ba,T_ba =TransBack(Pose)
   R_ec,T_ec=cam_M()
   trans_ec=trans(R_ec,T_ec)
-  print(T_ba)
-  vec=[float(x)/1000,float(y)/1000,-float(z)/1000]
+
+  vec=[float(y)/1000,float(x)/1000,float(z)/1000]
   P_bt=np.matmul(R_ba,vec)+T_ba
   trans_bt=trans(R_ba,P_bt)
   transf=np.matmul(trans_bt,np.linalg.inv(trans_ec))
-  print (transf)
   Rf,Tf=TransBack(transf)
   r=R.from_dcm(Rf)
   quat=r.as_quat()
@@ -211,40 +225,38 @@ def go_to_pose_goal(Pose,x,y,z):
   move_group.stop()
   move_group.clear_pose_targets()
 
-  current_pose = move_group.get_current_pose().pose
-  return all_close(pose_goal, current_pose, 0.01)
 
 
 def main(pose1):
   print " "
   print "---------------------------------------------------------- \n"
-  print "Welcome to the MoveIt MoveGroup Python by Bushra \n"
+  print "Welcome to the robot movement using Python by Bushra \n"
   print "---------------------------------------------------------- \n"
   print "============ Press `Enter` to begin the motion"
   raw_input()
-  start_pose()
-  print ":)"
+  start_pose(pose1)
+  print (pose1)
   p=aruco_base(pose1)
   print "============ Press `Enter` to execute a movement using a pose goal ..."
   raw_input()
-  go_to_pose_goal(p,0, 0, 0)
+  go_to_pose_goal(p,0, 0, 300)
   print "next pose"
   raw_input()
-  go_to_pose_goal(p, 70.0, 35.0, 100)
+  go_to_pose_goal(p, 70.0, 30.0,300)
   print "next pose"
   raw_input()
-  go_to_pose_goal(p,120.0, 35.0, 100)
+  go_to_pose_goal(p,115.0, 30.0, 300)
   print "next pose"
   raw_input()
-  go_to_pose_goal(p, 170.0, 35.0, 100)
+  go_to_pose_goal(p, 160.0, 30.0, 300)
   print "next pose"
   raw_input()
-  go_to_pose_goal(p,220.0, 35.0, 100)
+  go_to_pose_goal(p,205.0, 30.0, 300)
   print "next pose"
   raw_input()
-  go_to_pose_goal(p,220.0, 80, 100)
+  go_to_pose_goal(p,205.0, 65, 300)
 
-  print "============ Python tutorial demo complete!"
+  print "============  demo complete!"
  
 
 def pose():
@@ -257,7 +269,6 @@ def pose():
 
 if __name__ == '__main__':
     try:
-      #start_pose()
       pose()
     except rospy.ROSInterruptException:
       pass
