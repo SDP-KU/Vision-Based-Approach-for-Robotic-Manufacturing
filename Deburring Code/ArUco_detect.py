@@ -1,26 +1,22 @@
 import numpy as np
-import sys, time, math, keyboard, cv2
+import sys, time, math, keyboard, math, cv2
 import pyrealsense2 as rs
 from scipy.spatial.transform import Rotation as R
 import cv2.aruco as aruco
 
 def ArUco():
+    start = time.time() # get starting time
 
-    # Setting the camera
-    # Configure color streams
-    pipeline = rs.pipeline()
-    config = rs.config()
-    # Get device product line for setting a supporting resolution
-    pipeline_wrapper = rs.pipeline_wrapper(pipeline)
-    pipeline_profile = config.resolve(pipeline_wrapper)
+    pipeline, config = rs.pipeline(), rs.config()
+    pipeline_profile = config.resolve(rs.pipeline_wrapper(pipeline))
     device = pipeline_profile.get_device()
-    device_product_line = str(device.get_info(rs.camera_info.product_line))
-    #Intrensic Parameters
     color_profile = rs.video_stream_profile(pipeline_profile.get_stream(rs.stream.color))
     color_intrinsics = color_profile.get_intrinsics()
-    w, h = color_intrinsics.width, color_intrinsics.height
-    Cameramatrix=np.array([[611.301, 0, 320.367],[0, 611.506, 246.129],[0,0,1]])
-    #Find RGB 
+    ## USE the values from the camera to construct the camera matrix and to set the resolution of the frame
+    w, h = color_intrinsics.width, color_intrinsics.height 
+    fx, fy = color_intrinsics.fx, color_intrinsics.fy
+    ppx, ppy = color_intrinsics.ppx, color_intrinsics.ppy
+
     found_rgb = False   #Intial Value
     for s in device.sensors:
         if s.get_info(rs.camera_info.name) == 'RGB Camera':
@@ -30,64 +26,50 @@ def ArUco():
         print("The demo requires Depth camera with Color sensor")
         exit(0)
 
-    # ArUco Detection Code
-    # Start streaming
-    pipeline.start(config)
-    #---Parametrs 
-    markersize= 9 #[cm]
-    #---camera 
+    Cameramatrix=np.array([[fx, 0, ppx],[0, fy, ppy],[0,0,1]])
+    print (Cameramatrix)
+    input('enter')
+    
     cameradist=np.array([0.,    0.,   0.,   0.,    0.])
+    arucodic = aruco.Dictionary_get(aruco.DICT_6X6_1000)
+    parameters = aruco.DetectorParameters_create()
+    markersize = 9 # [cm]
+    pipeline.start(config)
     while True:
-        #---Aruco Dictionary
-        arucodic=aruco.getPredefinedDictionary(aruco.DICT_6X6_1000)
-        parameters=aruco.DetectorParameters_create()
-        parameters.cornerRefinementMethod = aruco.CORNER_REFINE_SUBPIX
-        parameters.cornerRefinementWinSize = 5
-        parameters.cornerRefinementMinAccuracy = 0.001
-        parameters.cornerRefinementMaxIterations = 5
-        #--Read Camera Frame
         frames = pipeline.wait_for_frames()
-        depth_frame = frames.get_depth_frame() # not used
-        color_frame = frames.get_color_frame()
-        if not depth_frame or not color_frame:
-            continue
-        # Convert images to numpy arrays
-        depth_image = np.asanyarray(depth_frame.get_data())
+        depth_frame, color_frame = frames.get_depth_frame(), frames.get_color_frame()
+        if not depth_frame or not color_frame: continue
         color_image = np.asanyarray(color_frame.get_data())
-        #--Convert to gray scale
+        h1, w1, _ = np.shape(color_image)
+        if w1 != w & h1 != h: ## NOT SURE IF THIS WORKS !!!
+            config.enable_stream(rs.stream.color, w1, h1, rs.format.rgb8, 30)
+
         gray=cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY)
-        #---Find aruco markers
-        corners, ids, rejected=  aruco.detectMarkers(image=gray, dictionary=arucodic, parameters=parameters)
-        if ids != None :
-            # the following line is not right 
-            ret= aruco.estimatePoseSingleMarkers(corners,markersize, Cameramatrix, cameradist)
-            #---unpack output
-            rvec = ret[0][0][0]
-            tvec = ret[1][0][0]
 
-            # Convert Vector r and (180,0,0) to Rotation Matrix  #__PRODUCE SOME ERROR CHECK__#
-            rvec_mat = R.from_rotvec(rvec)
-            rot_mat = R.from_rotvec([3.14,0,0])
-            rvec_mat = rvec_mat.as_matrix()
-            rot_mat = rot_mat.as_matrix()
-            # Add the Rotation Matrices
-            rotation_matrix_final = np.multiply(rvec_mat, rot_mat)
-            # Convert it back to vector
-            r = R.from_matrix(rotation_matrix_final)
-            rvec = r.as_euler('zyx', degrees=True)
-
-            
-            tvec = np.multiply(tvec, 10) # cm 2 mm
+        corners, ids, __ = aruco.detectMarkers(image=gray, dictionary=arucodic, parameters=parameters)
+        if np.all(ids != None) :
+            ret = aruco.estimatePoseSingleMarkers(corners,markersize, Cameramatrix, cameradist)
+            rvec, tvec = ret[0][0][0], np.multiply(ret[1][0][0], 10)
             aruco_pos = np.concatenate((tvec,rvec), axis=0)
-            # print (rvec)
-            # print (tvec)
+            
+            print (rvec)
+            print (tvec)
+
             cv2.imshow("test", cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB))
             cv2.waitKey(1)
+            cv2.destroyAllWindows()
             break
         else:
             cv2.imshow("test", cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB))
             cv2.waitKey(1)
-    # Stop streaming
+            cv2.destroyAllWindows()
     pipeline.stop()
 
+    # get time taken to run the for loop code 
+    elapsed_time_fl = (time.time() - start)
+    print (elapsed_time_fl)
+
     return (aruco_pos)
+
+if __name__ == "__main__":
+    ArUco()
