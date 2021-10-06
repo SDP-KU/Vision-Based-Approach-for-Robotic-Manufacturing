@@ -61,11 +61,21 @@ def callback(data):
         #---unpack output
         rvec = ret[0][0][0]
         tvec = ret[1][0][0]
-        
+    
         # Convert it back to vector
         tvec = np.multiply(tvec, 10) # cm 2 mm
         rotation = R.from_rotvec(rvec)
-        quat = rotation.as_quat()
+        print(rvec)
+        rotation_M=rotation.as_dcm()
+        R0=np.array([[1.,0.,0.],[0.,-1.,0.],[0.,0.,-1.]])
+        R1_M=np.matmul(R0, rotation_M)
+        print("A")
+        print(rotation_M)
+        print(R0)
+        print(R1_M)
+        R1=R.from_dcm(R1_M)
+        quat = R1.as_quat()
+        print(quat)
 
         p = Pose()
         p.position.x = tvec[0]
@@ -89,4 +99,4 @@ if __name__ == '__main__':
     try:
         PicToPose()
     except rospy.ROSInterruptException:
-        pass 
+        pass                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
