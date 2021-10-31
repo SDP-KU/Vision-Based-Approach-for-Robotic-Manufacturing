@@ -12,20 +12,20 @@ start = time.time()
 
 ## USER DEFINED
 # camera position with respect to end-effector
-C2E_x = -6.80029175e-02*1000
-C2E_y = 1.12672779e-01*1000
-C2E_z =  -1.78175184e-02*1000
-C2E_rx = np.multiply(1.5550587, 180/math.pi) 
-C2E_ry = np.multiply(0.0001366, 180/math.pi)
-C2E_rz = np.multiply(-2.3656934, 180/math.pi)
+C2E_x = -0.0334*1000
+C2E_y = 0.1329*1000
+C2E_z =  0.2080*1000
+C2E_rx = np.multiply(-1.5946364, 180/math.pi) 
+C2E_ry = np.multiply(0.0401067, 180/math.pi)
+C2E_rz = np.multiply(0.013144, 180/math.pi)
 
-# Drill position with respect to end-effector  ##__ NEED RE-DOING __##
-D2E_x = 7.8143
-D2E_y = -180.7194
-D2E_z = 126.1667
-D2E_rx = np.multiply(1.5450804, 180/math.pi) 
-D2E_ry = np.multiply(0.000781, 180/math.pi)
-D2E_rz = np.multiply(0.0300131, 180/math.pi)
+# Drill position with respect to end-effector
+D2E_x = 0.0565
+D2E_y = 192.5735
+D2E_z = 117.3004
+D2E_rx = np.multiply(-1.5750547, 180/math.pi) 
+D2E_ry = np.multiply(-0.0001207, 180/math.pi)
+D2E_rz = np.multiply(-0.0331271, 180/math.pi)
 
 # establish a link with the simulator
 RDK = Robolink()
@@ -64,7 +64,7 @@ CAM_TO_ARUCO = robodk.KUKA_2_Pose(aruco_pos)
 aruco_pose = robot_position * ENDEFFECTOR_TO_CAM * CAM_TO_ARUCO
 aruco_target.setPose(aruco_pose)
 
-def speed(): robot.setSpeed(speed_linear =20, speed_joints=3, accel_linear=-1, accel_joints=-1)
+def speed(): robot.setSpeed(speed_linear =25, speed_joints=4, accel_linear=-1, accel_joints=-1)
 speed() # Set Speed
 
 def CreateHole( name, pos, x,y,z ):
@@ -76,60 +76,51 @@ def CreateHole( name, pos, x,y,z ):
     return (Hole_Pose)
 
 # Create and initialize Holes, return Hole pose
-pose1 = CreateHole("Hole 1", aruco_pose , 80, 30, 0)
-# pose2 = CreateHole("Hole 2", pose1, 50, 0, 0)
-# pose3 = CreateHole("Hole 3", pose2, 50, 0, 0)
-# pose4 = CreateHole("Hole 4", pose3, 50, 0, 0)
-# pose5 = CreateHole("Hole 5", pose4, 50, 0, 0)
-# pose6 = CreateHole("Hole 6", pose5, 0, 40, 0)
-# pose7 = CreateHole("Hole 7", pose6, -50, 0, 0)
-# pose8 = CreateHole("Hole 8", pose7, -50, 0, 0)
-# pose9 = CreateHole("Hole 9", pose8, -50, 0, 0)
-# pose10 = CreateHole("Hole 10", pose9, -50, 0, 0)
+pose1 = CreateHole("Hole 1", aruco_pose , -105, -10, 0)
+pose2 = CreateHole("Hole 2", pose1, -50, 0, 0)
+pose3 = CreateHole("Hole 3", pose2, -50, 0, 0)
+pose4 = CreateHole("Hole 4", pose3, -50, 0, 0)
 
-input('enter')
+print("start")
 
-robot.MoveL(aruco_pose * transl(0,0,-125)) # Move to ArUco 
-
-input('enter')
+robot.MoveL(aruco_pose * transl(0,0,-180)) # Move to ArUco 
 
 def operation(pose):
-    robot.MoveL(pose * transl(0,0,-60))    
+    robot.MoveL(pose * transl(0,0,-140))    
+    operation_correct() 
+    connect_DK() 
+    speed() 
+    robot.setTool(Drill) 
+    # input('enter')
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(-32, -82.5, 0)) 
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0, 0, 12))
+    # input('enter')
+    operation_force() 
+    connect_DK() 
+    speed() 
     input('enter')
-    operation_correct() # hole detection
-    connect_DK() # Re-Connect with the Robot
-    speed() # Re-set Speed
-    robot.setTool(Drill) # Set active tool to Drill
-    input('enter STOP THE PROGRAM')
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(33,81,5)) # Move Drill to infront of the Hole, Move to x,y position of the Camera, move forward in the z
-    operation_force() # insert and force sensing
-    connect_DK() # Re-Connect with the Robot
-    speed() # Re-set Speed
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-35)) # Move the Drill out until the Debarring tip is around the walls of the Hole (REAR)
-    operation_drill() # Strat Debarring
-    connect_DK() # Re-Connect with the Robot
-    speed() # Re-set Speed
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-5)) # Move the Drill out until the Debarring tip is around the walls of the Hole (FRONT)
-    operation_drill() # Strat Debarring
-    connect_DK() # Re-Connect with the Robot
-    speed() # Re-set Speed
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-29)) # Take Drill out of the Hole
-    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(-33,-81,-5)) # Put Camera infront of the Hole again
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-35)) 
+    # input('enter')
+    # operation_drill() 
+    connect_DK() 
+    speed() 
+    # input('enter')
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-8))
+    # input('enter')
+    # operation_drill() 
+    connect_DK() 
+    speed() 
+    # input('enter')
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(0,0,-25)) # Take Drill out of the Hole
+    robot.MoveL(robot.SolveFK(robot.Joints())*ENDEFFECTOR_TO_DRILL*transl(32, 82.5 ,12)) # Put Camera infront of the Hole again
     robot.setTool(Camera) # Re-set acvtive tool to Camera
 
 operation(pose1)
-# operation(pose2)
-# operation(pose3)
-# operation(pose4)
-# operation(pose5)
-# operation(pose6)
-# operation(pose7)
-# operation(pose8)
-# operation(pose9)
-# operation(pose10)
-# operation(pose11)
-# operation(pose12)
-# operation(pose13)
+operation(pose2)
+operation(pose3)
+operation(pose4)
+
+print("done (TvT)")
 
 # get time taken to run the for loop code 
 elapsed_time_fl = (time.time() - start)
