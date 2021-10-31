@@ -19,7 +19,7 @@ if not found_rgb:
     print("The demo requires Depth camera with Color sensor")
     exit(0)
 
-lower_range, upper_range = np.array([0, 123, 0]), np.array([179, 255, 255]) # HSV Mask Parameters
+lower_range, upper_range = np.array([0, 113, 0]), np.array([179, 255, 255]) # HSV Mask Parameters
 
 # Hole Detection Parameters:
 detector, params = cv2.SimpleBlobDetector_create(), cv2.SimpleBlobDetector_Params()
@@ -29,14 +29,12 @@ params.minCircularity, params.minInertiaRatio = 0.1, 0.1
 params.minDistBetweenBlobs, opacity = 100, 0.1
 detector = cv2.SimpleBlobDetector_create(params)
 
-# b = 100
 center_x, center_y, b =  0, 0, 100
 
 def operation_detect():
     pipeline.start(config)
     x_v, y_v, count = [], [], 0
     global b , center_x, center_y
-    # center_x, center_y =  0, 0
     while True:
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
@@ -62,17 +60,26 @@ def operation_detect():
         b_v, xy, all_b_list, out = [], [], [], 1
         p = math.sqrt((px*px) + (py*py))
         count = count + 1
+
         for x,y in zip(x_v,y_v):
+            d_i = math.sqrt( ((px-x)*(px-x)) + ((py-y)*(py-y)) )
             xy_i = math.sqrt((x*x) + (y*y))
-            xy.append(xy_i)
-            all_b_list.append(abs(xy_i - p))
-            if abs(xy_i - p) <= b:
+            xy.append(d_i)
+            if d_i <= b:
                 center_x, center_y, b, out = x, y, abs(xy_i - p), 0
                 b_v.append(b)
 
+        # for x,y in zip(x_v,y_v):
+        #     xy_i = math.sqrt((x*x) + (y*y))
+        #     xy.append(xy_i)
+        #     all_b_list.append(abs(xy_i - p))
+        #     if abs(xy_i - p) <= b:
+        #         center_x, center_y, b = x, y, abs(xy_i - p)
+        #         b_v.append(b)
+
         if count == 3:
             print (" (ㆆ_ㆆ) ")
-            min_value_index = all_b_list.index(min(all_b_list))
+            min_value_index = xy.index(min(xy))
             center_x, center_y = x_v[min_value_index], y_v[min_value_index]
             print("Closest Circle is:", center_x,",", center_y)
             print ("Differenace with the optical center: ", (px-center_x),",",(py-center_y))
@@ -83,6 +90,20 @@ def operation_detect():
             break
         else:
             continue
+
+        # if count == 3:
+        #     print (" (ㆆ_ㆆ) ")
+        #     min_value_index = all_b_list.index(min(all_b_list))
+        #     center_x, center_y = x_v[min_value_index], y_v[min_value_index]
+        #     print("Closest Circle is:", center_x,",", center_y)
+        #     print ("Differenace with the optical center: ", (px-center_x),",",(py-center_y))
+        #     break
+        # elif out == 0:
+        #     print("Closest Circle is:", center_x,",", center_y)
+        #     print ("Differenace with the optical center: ", (px-center_x),",",(py-center_y))
+        #     break
+        # else:
+        #     continue
     pipeline.stop()
     return (center_x,center_y)
 
@@ -94,6 +115,7 @@ def operation_correct():
         if abs(x-px) <= 1 and abs(y-py) <= 1: break
         else:
             if abs(x-px) >= 10 and abs(y-py) >= 10: delta_x, delta_y, a, t = (x-px) * 5, (y-py) * 5, 0.2, 0.2
+            # elif abs(x-px) >= 10 and abs(y-py) >= 10: ### make this line for when they are less than 2
             else: delta_x, delta_y, a, t = (x-px) * 0.08, (y-py) * 0.08, 0.2, 0.05
             # new_pos = m3d.Transform([delta_x, delta_y, 0, 0, 0, 0]) # AINT GONNA USE THIS
             # move_to = m3d.Transform(rob.get_pose() * cam * new_pos).get_pose_vector() # AINT GONNA USE THIS
@@ -106,32 +128,26 @@ def operation_correct():
     print ("Hole Detection & Correction Total Time: ",elapsed_time_fl, " sec")
     print ("(ง︡'-'︠)ง")
 
-
 def operation_force():
     start = time.time() # get starting time
     rob = urx.Robot("192.168.50.110", use_rt=True) # connect to UR10   
-    # r = [0,-0.007, -0.003 ,0,0,0] # Speed Vector
-    r = [0,0,0.003,0,0,0]
+    r = [0,-0.007, -0.003 ,0,0,0] # Speed Vector
+    # r = [0,0,0.003,0,0,0]
     while True:
         rob.speedl(r, 0.15, 0.1)    # Start Moving
         f = rob.get_force(wait=True)    # Check Force While Moving
         print(f)
-        if f < 65 or f == None: continue # Stop When Limit Force is Detected
+        if f < 80 or f == None: continue # Stop When Limit Force is Detected
         else: break 
     rob.close()     # Close robot
     # get time taken to run the for loop code 
     elapsed_time_fl = (time.time() - start)
     print ("Tool Insertion Time: ", elapsed_time_fl, "sec")
 
+
 def operation_drill():
-    start = time.time() # get starting time
-    rob = urx.Robot("192.168.50.110", use_rt=True) # connect to UR10
-    # Set Digital Outputs to Turn the Drill On
+    rob = urx.Robot("192.168.50.110", use_rt=True) 
     rob.set_digital_out(1, False)
-    rob.set_digital_out(2, True)
-    time.sleep(2)     # Keep it working 
-    rob.set_digital_out(1, True)     # Set Digital Outputs to Turn the Drill Off
-    rob.close()     # Close robot
-    # get time taken to run the for loop code 
-    elapsed_time_fl = (time.time() - start)
-    print ("Drill On/Off Time: ",elapsed_time_fl, "sec")
+    time.sleep(2)    
+    rob.set_digital_out(1, True)     
+    rob.close()   
