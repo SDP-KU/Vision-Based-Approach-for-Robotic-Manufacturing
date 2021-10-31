@@ -27,13 +27,13 @@ def ArUco():
         exit(0)
 
     Cameramatrix=np.array([[fx, 0, ppx],[0, fy, ppy],[0,0,1]])
-    print (Cameramatrix)
-    input('enter')
+    # print (Cameramatrix)
+    # input('enter')
     
     cameradist=np.array([0.,    0.,   0.,   0.,    0.])
     arucodic = aruco.Dictionary_get(aruco.DICT_6X6_1000)
     parameters = aruco.DetectorParameters_create()
-    markersize = 9 # [cm]
+    markersize = 7.5 # [cm]
     pipeline.start(config)
     while True:
         frames = pipeline.wait_for_frames()
@@ -52,8 +52,8 @@ def ArUco():
             rvec, tvec = ret[0][0][0], np.multiply(ret[1][0][0], 10)
             aruco_pos = np.concatenate((tvec,rvec), axis=0)
             
-            print (rvec)
-            print (tvec)
+            # print (rvec)
+            # print (tvec)
 
             cv2.imshow("test", cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB))
             cv2.waitKey(1)
@@ -68,7 +68,6 @@ def ArUco():
     # get time taken to run the for loop code 
     elapsed_time_fl = (time.time() - start)
     print (elapsed_time_fl)
-
     return (aruco_pos)
 
 if __name__ == "__main__":
