@@ -107,4 +107,4 @@ if __name__ == '__main__':
     try:
         PicToPose()
     except rospy.ROSInterruptException:
-        pass    
+        pass                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
