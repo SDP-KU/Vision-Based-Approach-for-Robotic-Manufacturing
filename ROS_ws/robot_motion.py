@@ -26,8 +26,7 @@ group_name = "manipulator"
 move_group = moveit_commander.MoveGroupCommander(group_name)
 
 # reference frame for this robot:
-#move_group.set_planning_frame('ur10_base_link')
-planning_frame = 'ur10_base_link' #move_group.get_planning_frame()
+planning_frame = 'ur10_base_link' 
 print(planning_frame)
 # end-effector link for this group:
 move_group.set_end_effector_link('tool0')
@@ -78,16 +77,6 @@ def tf_M():
     rotation = R.from_quat(rvec)
     # rotation matrix from base to end effctor
     M = rotation.as_dcm()
-    # #get postion of end effctor from base
-    # p = geometry_msgs.msg.Pose()
-    # p.position.x = tvec[0]
-    # p.position.y = tvec[1]
-    # p.position.z = tvec[2]
-    # # Make sure the quaternion is valid and normalized
-    # p.orientation.x = rvec[0]
-    # p.orientation.y = rvec[1]
-    # p.orientation.z = rvec[2]
-    # p.orientation.w = rvec[3]
     
     return(M,tvec)
 
@@ -186,29 +175,6 @@ def cam_base(p):
   cam_base=np.matmul(np.matmul(trans1,trans2),trans3)
   return(cam_base)
 
-def start_pose():
-  # R1 & T1 are base to endeffctor
-  R1,T1= tf_M ()
-  trans1=trans(R1,T1)
-  r=R.from_dcm(R1) 
-  quat=r.as_quat()
-
-  pose_goal = geometry_msgs.msg.Pose()
-  pose_goal.orientation.x = quat[0]
-  pose_goal.orientation.y = quat[1]
-  pose_goal.orientation.z = quat[2] 
-  pose_goal.orientation.w = quat[3]
-  pose_goal.position.x = T1[0]
-  pose_goal.position.y = T1[1]
-  pose_goal.position.z = T1[2]
-  move_group.set_pose_target(pose_goal)
-  plan = move_group.go(wait=True)
-  move_group.stop()
-  move_group.clear_pose_targets()
-
-  current_pose = move_group.get_current_pose().pose
-  return all_close(pose_goal, current_pose, 0.01)
-
 # get the hole transformation matrix 
 hole_trans=np.array([])
 def cam_hole (data):
@@ -264,9 +230,10 @@ def main():
   raw_input()
   print "============ Press `Enter` to execute a movement using a pose goal ..."
   raw_input()
+  #get the aruco pose message
   pose=rospy.wait_for_message("pose",Pose)
   v=[pose.position.x,pose.position.y,pose.position.z]
-
+  # keep going to center until the error is less than 0.5 mm
   while abs(v[0])>0.5 or abs(v[1])>0.5 :
     p=aruco_base(pose)
     go_to_pose_goal(p,0, 0, -110)
@@ -276,6 +243,7 @@ def main():
   raw_input()
   i=0
   a=0
+  # go to the 4 holes in the lift of the aruco
   while i<4:
     go_to_pose_goal(p,-72+a,34.0,-110)
     hole_pos = rospy.wait_for_message("hole_center", PointStamped)
