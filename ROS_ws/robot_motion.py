@@ -15,17 +15,13 @@ import math
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 import scipy.spatial.transform 
+from geometry_msgs.msg import PointStamped
+
 
 ## First initialize `moveit_commander`_ and a `rospy`_ node:
 moveit_commander.roscpp_initialize(sys.argv)
-#rospy.init_node('move_group_python_interface', anonymous=True)
-
-    
 robot = moveit_commander.RobotCommander()
-
-
 scene = moveit_commander.PlanningSceneInterface()
-
 group_name = "manipulator"
 move_group = moveit_commander.MoveGroupCommander(group_name)
 
@@ -71,7 +67,7 @@ def all_close(goal, actual, tolerance):
 def tf_M():
   rospy.sleep(1)
   listener = tf.TransformListener()
-  # get the tran vec and rot quat from tf listener 
+  # get the tran vec and rot quat from tf listener  
   while not rospy.is_shutdown():
     try:
       (tvec,rvec) = listener.lookupTransform('/ur10_base_link', '/tool0', rospy.Time(0))
@@ -82,36 +78,61 @@ def tf_M():
     rotation = R.from_quat(rvec)
     # rotation matrix from base to end effctor
     M = rotation.as_dcm()
-    #get postion of end effctor from base
-    p = geometry_msgs.msg.Pose()
-    p.position.x = tvec[0]
-    p.position.y = tvec[1]
-    p.position.z = tvec[2]
-    # Make sure the quaternion is valid and normalized
-    p.orientation.x = rvec[0]
-    p.orientation.y = rvec[1]
-    p.orientation.z = rvec[2]
-    p.orientation.w = rvec[3]
-   
+    # #get postion of end effctor from base
+    # p = geometry_msgs.msg.Pose()
+    # p.position.x = tvec[0]
+    # p.position.y = tvec[1]
+    # p.position.z = tvec[2]
+    # # Make sure the quaternion is valid and normalized
+    # p.orientation.x = rvec[0]
+    # p.orientation.y = rvec[1]
+    # p.orientation.z = rvec[2]
+    # p.orientation.w = rvec[3]
+    
     return(M,tvec)
+
 # camera -> end-effector matrix
 def cam_M():
-  # Trans=[[-0.99977665, 0.01048481,0.01834987, 0.03690504],
-  # [-0.01830651, 0.00421686, -0.99982353, -0.13537845],
-  # [-0.01056033, -0.99993614,-0.00402398,0.20485623], [0,0,0 ,1]]
+  Trans=[[0.9998, 0.0199, -0.0057,  -0.0420],
+ [0.0061 , -0.0155  ,  0.9999 , 0.1391],
+ [0.0198 , -0.9997 ,-0.0156 ,0.2078],
+ [ 0.      ,    0.      ,    0.     ,     1.   ,    ]]
+ #  Trans=[[-0.92544921, -0.00239401, -0.37886412,  0.00173008],
+ #  [-0.37886939 , 0.002364  ,  0.92544714 , 0.08117633],
+ #  [-0.00131989 , 0.99999434 ,-0.00309478 ,-0.01618667],
+ #  [ 0.      ,    0.      ,    0.     ,     1.       ]]
 
-  Trans=[[-0.7071, 0, -0.7071, -0.07],
-  [-0.7071, 0, 0.7071, 0.07],
-  [0., 1., 0., 0.], [0,0,0 ,1]]
   M_cam,tvec_c=TransBack(Trans)
   return(M_cam,tvec_c)
 
+# tool -> cam matrix
+def tool_M():
+  tool = np.array([[0.9995,0,0.0331,0.0000565],
+                    [-0.0331,-0.0043,0.9994,0.1925735],
+                    [0.0001 ,-1.,-0.0043 , 0.1173004],
+                    [0.  ,0.  ,0.  ,1.  ]])
+  cam=[[0.9998, 0.0199, -0.0057,  -0.0420],
+  [0.0061 , -0.0155  ,  0.9999 , 0.1391],
+  [0.0198 , -0.9997 ,-0.0156 ,0.2078],
+  [ 0.      ,    0.      ,    0.     ,     1.   ,    ]]
+  t=np.matmul(np.linalg.inv(cam),tool)
+  return (t)
+  
+
 # Transformation Matrix generator
 def trans(M,T):
-  trans=[[M[0][0],M[0][1],M[0][2],T[0]],[M[1][0],M[1][1],M[1][2],T[1]],[M[2][0],M[2][1],M[2][2],T[2]],[0,0,0,1]]
+  trans=np.array([[M[0][0],M[0][1],M[0][2],T[0]],[M[1][0],M[1][1],M[1][2],T[1]],[M[2][0],M[2][1],M[2][2],T[2]],[0,0,0,1]])
   return(trans)
 
-# pose matrix 
+# transformation Back generator 
+def TransBack(M):
+  tvec=[M[0][3],M[1][3],M[2][3]]
+  matrix=[[M[0][0],M[0][1],M[0][2]],
+          [M[1][0],M[1][1],M[1][2]],
+          [M[2][0],M[2][1],M[2][2]]]
+  return(matrix,tvec)
+
+# aruco pose matrix 
 def Pose_M(pose):
   tvec=[pose.position.x,pose.position.y,pose.position.z]
   quat =[pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w]
@@ -127,47 +148,43 @@ def aruco_base(p):
   R3,T3=Pose_M(p)
   trans1=trans(R1,T1)
   trans2=trans(R2,T2)
-  # trans2=[[-0.99977665, 0.01048481,0.01834987, 0.03690504],
-  # [-0.01830651, 0.00421686, -0.99982353, -0.13537845],
-  # [-0.01056033, -0.99993614,-0.00402398,0.20485623], [0,0,0 ,1]]
-  trans2=[[-0.7071, 0, -0.7071, -0.07],
-  [-0.7071, 0, 0.7071, 0.07],
-  [0., 1., 0., 0.], [0,0,0 ,1]]
   T3=[T3[0]/1000,T3[1]/1000,T3[2]/1000]
   trans3=trans(R3,T3)
-  print "end effector-base \n"
-  print(trans1)
-  print "\ncamera- end effector \n"
-  print(trans2)
-  print "\naruco -camera \n"
-  print(trans3)
-  print "\ncamera - base\n"
-  mlt=np.matmul(trans1,trans2)
-  print(mlt)
+  # print "end effector-base \n"
+  # print(trans1)
+  # print "\ncamera- end effector \n"
+  # print (trans2)
+  # print "(\naruco -camera \n"
+  # print(trans3)
+  # print "\ncamera - base\n"
+  # mlt=np.matmul(trans1,trans2)
+  # print(mlt)
   aruco_base=np.matmul(np.matmul(trans1,trans2),trans3)
   print "\naruco -base \n"
   print(aruco_base)
   return(aruco_base)
+
+# tool -> base matrix
+def tool_base():
+  R1,T1= tf_M ()
+  R2,T2= cam_M()
+  trans3=tool_M()
+  trans1=trans(R1,T1)
+  trans2=trans(R2,T2)
+  tool_base=np.matmul(np.matmul(trans1,trans2),trans3)
+  return(tool_base)
 
 # camera -> base matrix
 def cam_base(p):
   # R1 & T1 are base to endeffctor (from Tf_M)
   R1,T1= tf_M ()
   R2,T2= cam_M()
- 
+  I=np.identity(3)
   trans1=trans(R1,T1)
   trans2=trans(R2,T2)
-
-  cam_base=np.matmul(trans1,trans2)
+  trans3=trans(I,p)
+  cam_base=np.matmul(np.matmul(trans1,trans2),trans3)
   return(cam_base)
-
-# transformation Back generator 
-def TransBack(M):
-  tvec=[M[0][3],M[1][3],M[2][3]]
-  matrix=[[M[0][0],M[0][1],M[0][2]],
-          [M[1][0],M[1][1],M[1][2]],
-          [M[2][0],M[2][1],M[2][2]]]
-  return(matrix,tvec)
 
 def start_pose():
   # R1 & T1 are base to endeffctor
@@ -192,26 +209,31 @@ def start_pose():
   current_pose = move_group.get_current_pose().pose
   return all_close(pose_goal, current_pose, 0.01)
 
+# get the hole transformation matrix 
+hole_trans=np.array([])
+def cam_hole (data):
+  x=data.point.x
+  y=data.point.y
+  z=data.point.z
+  Vec=np.array([x,y,z])
+  hole_pose=cam_base(Vec)
+  global hole_trans
+  hole_trans=hole_pose
+
+
 def go_to_pose_goal(Pose,x,y,z):
   R_ba,T_ba=TransBack(Pose)
   R_ec,T_ec=cam_M()
   trans_ec=trans(R_ec,T_ec)
-  print(trans_ec)
-  print(R_ec)
-
 
   vec=[float(x)/1000,float(y)/1000,float(z)/1000]
   P_bt=np.matmul(vec,R_ba)+T_ba
   trans_bt=trans(R_ba,P_bt)
-  print(trans_bt)
-  inv=np.linalg.inv(trans_ec)
-  print(inv)
   transf=np.matmul(trans_bt,np.linalg.inv(trans_ec))
   print(transf)
   Rf,Tf=TransBack(transf)
   r=R.from_dcm(Rf)
   quat=r.as_quat()
-
 
   pose_goal = geometry_msgs.msg.Pose()
   pose_goal.orientation.x = quat[0]
@@ -232,49 +254,57 @@ def go_to_pose_goal(Pose,x,y,z):
   return all_close(pose_goal, current_pose, 0.01)
 
 
-def main(pose1):
+def main():
+  rospy.init_node('move_group', anonymous=True) 
   print " "
   print "---------------------------------------------------------- \n"
   print "Welcome to the robot movement using Python by Bushra \n"
   print "---------------------------------------------------------- \n"
   print "============Press `Enter` to begin the motion ..."
   raw_input()
-  start_pose()
-  p=aruco_base(pose1)
-  print("base_aruco")
-  print(p)
   print "============ Press `Enter` to execute a movement using a pose goal ..."
   raw_input()
-  go_to_pose_goal(p,0, 0, -100)
+  pose=rospy.wait_for_message("pose",Pose)
+  v=[pose.position.x,pose.position.y,pose.position.z]
+
+  while abs(v[0])>0.5 or abs(v[1])>0.5 :
+    p=aruco_base(pose)
+    go_to_pose_goal(p,0, 0, -110)
+    pose=rospy.wait_for_message("pose",Pose)
+    v=[pose.position.x,pose.position.y,pose.position.z]
   print "next pose"
   raw_input()
-  go_to_pose_goal(p, 70.0, 30.0, -100)
-  print "next pose"
-  raw_input()
-  go_to_pose_goal(p,115.0, 30.0, -100)
-  print "next pose"
-  raw_input()
-  go_to_pose_goal(p, 160.0, 30.0, -100)
-  print "next pose"
-  raw_input()
-  go_to_pose_goal(p,205.0, 30.0, -100)
-  print "next pose"
-  raw_input()
-  go_to_pose_goal(p,205.0, 65, -100)
+  i=0
+  a=0
+  while i<4:
+    go_to_pose_goal(p,-72+a,34.0,-110)
+    hole_pos = rospy.wait_for_message("hole_center", PointStamped)
+    x=hole_pos.point.x
+    y=hole_pos.point.y
+    z=hole_pos.point.z
+    Vec=np.array([x,y,z])
+    hole_pose=cam_base(Vec)
+    go_to_pose_goal(hole_pose,0, 0, 0)
+    a=a-50
+    print "a:"
+    print(a)
+    i=i+1
+    print "next pose"
+    raw_input()
 
   print "============ demo complete!"
  
 
 def pose():
   rospy.init_node('PicToPose', anonymous=True)
-  rospy.Subscriber("pose",Pose, main)
+  #rospy.Subscriber("hole_center",PointStamped, cam_hole)
+ # rospy.Subscriber("pose",Pose, main)
   rospy.spin()
         
         
-
-
 if __name__ == '__main__':
     try:
-        pose()
+        # main()
+        tool_M()
     except rospy.ROSInterruptException:
         pass
