@@ -5,19 +5,20 @@ import sys, time, math, cv2, keyboard
 import pyrealsense2 as rs
 from scipy.spatial.transform import Rotation as R
 from ArUco_detect import ArUco
-from operation_hole import operation_correct, operation_force, operation_on_off
+from operation_hole import operation_correct, operation_force
+from test import testing
 
 # get starting time
 start = time.time()
 
 ## USER DEFINED
 # camera position with respect to end-effector
-C2E_x = -6.80029175e-02*1000
-C2E_y = 1.12672779e-01*1000
-C2E_z =  -1.78175184e-02*1000
-C2E_rx = np.multiply(1.5550587, 180/math.pi) 
-C2E_ry = np.multiply(0.0001366, 180/math.pi)
-C2E_rz = np.multiply(-2.3656934, 180/math.pi)
+C2E_x = 0.0628*1000
+C2E_y = 0.0248*1000
+C2E_z = 0.0323*1000
+C2E_rx = np.multiply(-1.6116361, 180/math.pi) 
+C2E_ry = np.multiply(-0.0300219, 180/math.pi)
+C2E_rz = np.multiply(-1.5063999, 180/math.pi)
 
 # actuator position with respect to end-effector 
 A2E_x = 7.8143
@@ -70,26 +71,11 @@ q_tip = create_target('Q Tip', 100, -600, 50, 270, 0, 0)
 trash = create_target('Bin', 200, -600, 50, 270, 0, 0)
 paint = create_target('Paint', 300, -400, 50, 270, 0, 0)
 
-############## TEST ONLY #################
-# robot.MoveL(q_tip * transl(0,-50,0))
-# robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,20,0))
-# robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,-30,0))
-# robot.MoveL(paint * transl(0,-50,0))
-# robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,20,0))
-# robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,-30,0))
-# robot.MoveL(robot_joints)
-# robot.MoveL(trash * transl(0,-50,0))
-# robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,20,0))
-# robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,-30,0))
-# robot.MoveL(robot_joints)
-
-# input('enter')
-
 # Add ArUco Target and Initialze it Position
 aruco_marker = RDK.Item('ARUCO', ITEM_TYPE_TARGET)
 aruco_target = RDK.AddTarget('aruco', itemparent=aruco_marker)
 CAM_TO_ARUCO = robodk.KUKA_2_Pose(aruco_pos)
-aruco_pose = robot_position * ENDEFFECTOR_TO_CAM * CAM_TO_ARUCO
+aruco_pose = robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_CAM * CAM_TO_ARUCO
 aruco_target.setPose(aruco_pose)
 
 def speed(): robot.setSpeed(speed_linear =20, speed_joints=3, accel_linear=-1, accel_joints=-1)
@@ -100,7 +86,7 @@ def CreateHole( name, pos, x,y,z ):
     Hole_Target = RDK.AddTarget(name, itemparent=aruco_marker)      # Create Target
     Hole_Pose = pos * transl(x,y,z)     # Get Position
     Hole_Set_Pose = Hole_Target.setPose(Hole_Pose)      # Set Position
-    Robot_Joints = robot.SolveIK(Hole_Pose, joints_approx=None, tool=ENDEFFECTOR_TO_DRILL, reference=None)      # Calculate New Robot Joints
+    Robot_Joints = robot.SolveIK(Hole_Pose, joints_approx=None, tool=ENDEFFECTOR_TO_ACT, reference=None)      # Calculate New Robot Joints
     return (Hole_Pose)
 
 # Create and initialize Holes, return Hole pose
@@ -115,64 +101,84 @@ pose4 = CreateHole("Hole 4", pose3, 50, 0, 0)
 # pose9 = CreateHole("Hole 9", pose8, -50, 0, 0)
 # pose10 = CreateHole("Hole 10", pose9, -50, 0, 0)
 
-def paint(pose_1, pose_2):
+def get_paint():
     # move to pick the q-tips then dip in the paint
+    input('enter')
     robot.MoveL(q_tip * transl(0,-50,0))
-    operation_on_off(True)
-    connect_DK() # Re-Connect with the Robot
-    speed() # Re-set Speed
+    # testing("forward")
+    # connect_DK()
+    # speed()
+    input('enter')
     robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,20,0))
-    operation_on_off(False)
-    connect_DK() # Re-Connect with the Robot
-    speed() # Re-set Speed
+    # testing("start")
+    # connect_DK()
+    # speed()
+    input('enter')
     robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,-30,0))
     robot.MoveL(paint * transl(0,-50,0))
     robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,20,0))
     robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,-30,0))
     robot.MoveL(robot_joints)
 
+def paint(pose_1, pose_2):
     # Aruco, Hole Detection & Applying Paint
-    setTool(Camera) # change to Camera to detect
-    robot.MoveL(aruco_pose * transl(0,0,-125)) # Move to ArUco 
-    robot.MoveL(pose_1 * transl(0,0,-60)) # Move to hole
-    operation_correct() # hole detection & correction
-    connect_DK() # Re-Connect with the Robot
-    speed() # Re-set Speed 
-    ## Save current join setup to use with actuator
-    hole_pose_1 = robot.SolveFK(robot.Joints())
-    setTool(Actuator)
-    robot.MoveL(hole_pose_1) # Move ACT to hole
-    operation_force() # Apply paint
-    connect_DK() # Re-Connect with the Robot
-    speed() # Re-set Speed
-    robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,-30,0)) ## check which axis to move back
+    robot.setTool(Camera)
+    print(aruco_pose)
+    input('enter')
+    robot.MoveL(aruco_pose * transl(0,0,-200)) # need some rotation on the z axix 
+    aruco_pose_2 = robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_CAM * robodk.KUKA_2_Pose(ArUco()) 
+    aruco_target.setPose(aruco_pose_2)
+    input('enter')
+    robot.MoveL(aruco_pose_2 * transl(0,0,-200)) 
+    robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_CAM * rotz(0.1))
+    input('STOP')
+
+
+    robot.MoveL(pose_1 * transl(0,0,-60)) 
+    operation_correct() 
+    operation_correct()
+    connect_DK() 
+    speed() 
+
+
+    ## Save current join pose to use with actuator (NOT SURE OF THIS ONE !! TEST)
+    hole_pose_1 = robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,0,-60)
+    robot.setTool(Actuator)
+    robot.MoveL(hole_pose_1)
+    operation_force() 
+    connect_DK()
+    speed()
+    robot.MoveL(hole_pose_1) ## check which axis to move back
     setTool(Camera)
 
-    # Move back, move to the second hole and then trash
-    robot.MoveL(pose_2 * transl(0,0,-60)) # Move to hole
-    operation_correct() # hole detection & correction
-    connect_DK() # Re-Connect with the Robot
-    speed() # Re-set Speed 
-    ## Save current join setup to use with actuator
-    hole_pose_2 = robot.SolveFK(robot.Joints())
+    # 2nd hole
+    robot.MoveL(pose_2 * transl(0,0,-60))
+    operation_correct()
+    connect_DK() 
+    speed() 
+
+    ## Save current join pose to use with actuator
+    hole_pose_2 = robot.SolveFK(robot.Joints())  * ENDEFFECTOR_TO_ACT * transl(0,0,-60)
     setTool(Actuator)
-    robot.MoveL(hole_pose_2) # Move ACT to hole
-    operation_force() # Apply paint
-    connect_DK() # Re-Connect with the Robot
-    speed() # Re-set Speed
-    robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,-30,0)) ## check which axis to move back
+    robot.MoveL(hole_pose_2) 
+    operation_force() 
+    connect_DK() 
+    speed() 
+    robot.MoveL(hole_pose_2)
 
     # Trash the q-tip
     robot.MoveL(trash * transl(0,-50,0))
     robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,20,0))
-    operation_on_off(False)
-    operation_on_off(True)
+    # testing("forward")
+    # testing("start")
     robot.MoveL(robot.SolveFK(robot.Joints()) * ENDEFFECTOR_TO_ACT * transl(0,-30,0))
     robot.MoveL(robot_joints)
 
 
+# get_paint()
+
 paint(pose1, pose2)
-paint(pose3, pose4)
+# paint(pose3, pose4)
 
 # get time taken to run the for loop code 
 elapsed_time_fl = (time.time() - start)
