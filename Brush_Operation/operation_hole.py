@@ -86,7 +86,6 @@ def operation_detect():
     return (center_x,center_y)
 
 def operation_correct():
-    start = time.time() # get starting time
     rob = urx.Robot("192.168.50.110", use_rt=True) # connect to UR10
     while True:
         x,y = operation_detect()
@@ -99,13 +98,10 @@ def operation_correct():
             continue
     rob.close()     # Close robot
     # get time taken to run the for loop code   
-    elapsed_time_fl = (time.time() - start)
-    print ("Hole Detection & Correction Total Time: ",elapsed_time_fl, " sec")
     print ("(ง︡'-'︠)ง")
 
 
 def operation_force(): ## NEED TO FIX THE DIRECTION OF THIS ONE
-    start = time.time() # get starting time
     rob = urx.Robot("192.168.50.110", use_rt=True) # connect to UR10   
     r = [0,0,0.003,0,0,0]
     while True:
@@ -115,31 +111,4 @@ def operation_force(): ## NEED TO FIX THE DIRECTION OF THIS ONE
         if f < 45 or f == None: continue # Stop When Limit Force is Detected (check this one)
         else: break 
     rob.close()     # Close robot
-    # get time taken to run the for loop code 
-    elapsed_time_fl = (time.time() - start)
-    print ("Tool Insertion Time: ", elapsed_time_fl, "sec")
-
-def operation_on_off(name): ## check how will this work as open close for later ???
-    start = time.time() # get starting time
-    rob = urx.Robot("192.168.50.110", use_rt=True) # connect to UR10
-    volt = rob.get_analog_in(0, wait=False)
-    # ex. max. volt=12V, middle = 6V
-    # er. about 0.5 volt ?
-    # initialy make them the same
-    while True: # check for each ooperation, use name tags
-        # open
-        if volt > 6.5:
-            rob.set_digital_out(1, False)
-            rob.set_digital_out(2, True)
-        # close
-        if volt < 5.5:
-            rob.set_digital_out(1, True)
-            rob.set_digital_out(2, False)
-        # constant
-        if 5.5 < volt < 6.5 and name == False:
-            rob.set_digital_out(1, False)
-            rob.set_digital_out(2, False)
-
-    # get time taken to run the for loop code 
-    elapsed_time_fl = (time.time() - start)
-    print ("Drill On/Off Time: ",elapsed_time_fl, "sec")
+    
