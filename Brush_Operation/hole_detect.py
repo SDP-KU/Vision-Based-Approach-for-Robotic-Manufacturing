@@ -129,28 +129,12 @@ def HoleDetec_Manual():
         
         # If the user presses `s` then print this array.
         if key == ord('s'):
-            
             thearray = [[l_h,l_s,l_v],[u_h, u_s, u_v]]
             print(thearray)
-
-        # if key == ord('c'):
-        #     px = 320
-        #     py = 246
-        #     p = math.sqrt((px*px) + (py*py))
-        #     b = 100
-        #     for x,y in zip(x_v,y_v):
-        #         xy = math.sqrt((x*x) + (y*y))
-        #         if abs(xy - p) <= b:
-        #             center_x = x
-        #             center_y = y
-        #             b = abs(xy - p)
-        #     print("Closest Circle is:", center_x,",", center_y)
-        #     print ("Differenace with the optical center: ", (px-center_x),",",(py-center_y))
 
     # Release the camera & destroy the windows.    
     cv2.waitKey(1) & 0xff
 
-    return (center_x,center_y)
 
 if __name__ == "__main__":
-    a,b=HoleDetec_Manual()
+    HoleDetec_Manual()
