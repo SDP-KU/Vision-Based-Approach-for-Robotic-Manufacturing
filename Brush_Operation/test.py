@@ -28,10 +28,10 @@ def operation_on_off():  # this code works
             rob.set_digital_out(2, False)
             print(rob.get_analog_in(0, wait=False))
 
-# operation_on_off()
+operation_on_off()
 
 
-def testing(char):
+def testing(char): # This one works too, but need adjusting after the part is done
     rob = urx.Robot("192.168.50.110", use_rt=True) # connect to UR10
     volt = rob.get_analog_in(0, wait=False)
     print(volt)
