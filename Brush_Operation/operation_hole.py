@@ -19,8 +19,7 @@ if not found_rgb:
     print("The demo requires Depth camera with Color sensor")
     exit(0)
 
-## CHECK THESE !!
-lower_range, upper_range = np.array([0, 123, 0]), np.array([179, 255, 255]) # HSV Mask Parameters
+lower_range, upper_range = np.array([0, 200, 0]), np.array([179, 255, 255]) # HSV Mask Parameters
 
 # Hole Detection Parameters:
 detector, params = cv2.SimpleBlobDetector_create(), cv2.SimpleBlobDetector_Params()
@@ -103,12 +102,13 @@ def operation_correct():
 
 def operation_force(): ## NEED TO FIX THE DIRECTION OF THIS ONE
     rob = urx.Robot("192.168.50.110", use_rt=True) # connect to UR10   
-    r = [0,0,0.003,0,0,0]
+    r = [0,-0.003,0,0,0,0]
     while True:
-        rob.speedl(r, 0.15, 0.1)    # Start Moving
+        rob.speedl(r, 0.2, 0.1)    # Start Moving
         f = rob.get_force(wait=True)    # Check Force While Moving
         print(f)
-        if f < 45 or f == None: continue # Stop When Limit Force is Detected (check this one)
+        if f < 53 or f == None: continue # Stop When Limit Force is Detected (The part need to be reged in order for this to work)
         else: break 
     rob.close()     # Close robot
     
+# operation_force()
