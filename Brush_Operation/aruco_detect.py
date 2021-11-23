@@ -16,7 +16,7 @@ def ArUco():
     w, h = color_intrinsics.width, color_intrinsics.height 
     fx, fy = color_intrinsics.fx, color_intrinsics.fy
     ppx, ppy = color_intrinsics.ppx, color_intrinsics.ppy
-    print (w,h,fx,fy,ppx,ppy)
+    # print (w,h,fx,fy,ppx,ppy)
 
     found_rgb = False   #Intial Value
     for s in device.sensors:
@@ -28,7 +28,7 @@ def ArUco():
         exit(0)
 
     Cameramatrix=np.array([[fx, 0, ppx],[0, fy, ppy],[0,0,1]])
-    print (Cameramatrix)
+    # print (Cameramatrix)
     # input('enter')
     
     cameradist=np.array([0.,    0.,   0.,   0.,    0.])
@@ -50,12 +50,15 @@ def ArUco():
         corners, ids, __ = aruco.detectMarkers(image=gray, dictionary=arucodic, parameters=parameters)
         if np.all(ids != None) :
             ret = aruco.estimatePoseSingleMarkers(corners,markersize, Cameramatrix, cameradist)
-            rvec, tvec = ret[0][0][0], np.multiply(ret[1][0][0], 10)
-            aruco_pos = np.concatenate((tvec,rvec), axis=0)
-            
+            rvec_1, tvec = ret[0][0][0], np.multiply(ret[1][0][0], 10)
+            rvec = [rvec_1[2], rvec_1[1], -rvec_1[0]]
+            # print (rvec_1)
+
             print (rvec)
             print (tvec)
 
+            aruco_pos = np.concatenate((tvec,rvec), axis=0)
+            # print (aruco_pos)
             cv2.imshow("test", cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB))
             cv2.waitKey(1)
             cv2.destroyAllWindows()
@@ -65,10 +68,6 @@ def ArUco():
             cv2.waitKey(1)
             cv2.destroyAllWindows()
     pipeline.stop()
-
-    # get time taken to run the for loop code 
-    elapsed_time_fl = (time.time() - start)
-    print (elapsed_time_fl)
 
     return (aruco_pos)
 
